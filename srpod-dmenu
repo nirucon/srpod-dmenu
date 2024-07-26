@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Script to search and play pod episodes @ Sveriges Radio by Nicklas Rudolfsson
+# https://github.com/nirucon
+
+# Dependencies:
+# - jq
+# - curl
+# - dmenu
+# - mpv
+# - notify-send
+
+# Function to search for podcasts
+search_podcasts() {
+    local query=$1
+    curl -s "https://api.sr.se/api/v2/episodes/search?query=${query}&format=json&size=5" | jq -r '.episodes[] | "\(.program.name) - \(.title)"'
+}
+
+# Function to get podcast URL
+get_podcast_url() {
+    local query=$1
+    curl -s "https://api.sr.se/api/v2/episodes/search?query=${query}&format=json&size=5" | jq -r '.episodes[] | select(.title == "'"${query#* - }"'") | .listenurl'
+}
+
+# Main loop
+while true; do
+    # Prompt the user to enter a search term
+    search_query=$(echo -e "New search\nExit" | dmenu -p "Enter search term:")
+    
+    # Check if the user wants to exit
+    if [ "$search_query" == "Exit" ]; then
+        exit 0
+    fi
+    
+    # Get the search results
+    results=$(search_podcasts "$search_query")
+    
+    # Prompt the user to select a podcast episode
+    selected=$(echo -e "$results\nNew search\nExit" | dmenu -p "Select an episode:")
+    
+    # Handle user selection
+    if [ "$selected" == "New search" ]; then
+        continue
+    elif [ "$selected" == "Exit" ]; then
+        exit 0
+    elif [ -n "$selected" ]; then
+        # Get the podcast URL
+        url=$(get_podcast_url "$selected")
+        
+        # Notify the user and play the podcast
+        notify-send "Playing podcast" "$selected" -t 5000
+        mpv "$url"
+    fi
+done
