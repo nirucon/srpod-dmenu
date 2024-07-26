@@ -9,6 +9,7 @@
 # - dmenu
 # - mpv
 # - notify-send
+# https://github.com/nirucon/sverigesradio-dmenu (optional for jumping to live radio streaming)
 
 # Temporary file to store mpv process ID
 MPV_PID_FILE="/tmp/srpod-mpv.pid"
