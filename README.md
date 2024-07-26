@@ -28,6 +28,8 @@ Optionally, you can also install `sverigesradio-dmenu` for live radio streaming 
 
 ## Installation
 
+Note: I use to save my dmenu scripts in /usr/local/bin/
+
 ### For Debian-based Systems
 
 1. **Ensure Dependencies are Installed**
