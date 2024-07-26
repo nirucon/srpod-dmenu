@@ -16,12 +16,6 @@ search_podcasts() {
     curl -s "https://api.sr.se/api/v2/episodes/search?query=${query}&format=json&size=5" | jq -r '.episodes[] | "\(.program.name) - \(.title) - \(.id)"'
 }
 
-# Function to get podcast URL
-get_podcast_url() {
-    local episode_id=$1
-    curl -s "https://api.sr.se/api/v2/episodes/get?id=${episode_id}&format=json" | jq -r '.episode.listenpodfile.url'
-}
-
 # Main loop
 while true; do
     # Prompt the user to enter a search term
@@ -34,6 +28,9 @@ while true; do
 
     # Get the search results
     results=$(search_podcasts "$search_query")
+
+    # Debugging statement
+    echo "Search results: $results"
 
     # Prompt the user to select a podcast episode
     selected=$(echo -e "$results\nNew search\nExit" | dmenu -p "Select an episode:")
@@ -54,5 +51,7 @@ while true; do
         echo "Episode Title: $episode_title"
         echo "Episode ID: $episode_id"
 
-        # Get the podcast URL
- 
+        # For now, just loop back to the start
+        continue
+    fi
+done
