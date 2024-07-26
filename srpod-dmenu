@@ -10,14 +10,8 @@
 # - mpv
 # - notify-send
 
-#!/bin/bash
-
-# Dependencies:
-# - jq
-# - curl
-# - dmenu
-# - mpv
-# - notify-send
+# Temporary file to store mpv process ID
+MPV_PID_FILE="/tmp/srpod-mpv.pid"
 
 # Function to search for podcasts
 search_podcasts() {
@@ -28,56 +22,137 @@ search_podcasts() {
 # Function to get podcast URL
 get_podcast_url() {
     local episode_id=$1
-    curl -s "https://api.sr.se/api/v2/episodes/get?id=${episode_id}&format=json" | jq -r '.episode.listenpodfile.url'
+    curl -s "https://api.sr.se/api/v2/episodes/get?id=${episode_id}&format=json" | jq -r '.episode.listenpodfile.url // .episode.downloadpodfile.url'
 }
 
-# Main loop
-while true; do
-    # Prompt the user to enter a search term
-    search_query=$(echo -e "New search\nExit" | dmenu -p "Enter search term:")
+# Function to display results with dmenu
+display_results() {
+    local results=$1
+    echo "$results" | dmenu -i -p "Select an episode or choose an option:"
+}
 
-    # Check if the user wants to exit
-    if [ "$search_query" == "Exit" ]; then
-        exit 0
-    fi
-
-    # Get the search results
-    results=$(search_podcasts "$search_query")
-
-    # Debugging statement
-    echo "Search results: $results"
-
-    # Prompt the user to select a podcast episode
-    selected=$(echo -e "$results\nNew search\nExit" | dmenu -p "Select an episode:")
-
-    # Handle user selection
-    if [ "$selected" == "New search" ]; then
-        continue
-    elif [ "$selected" == "Exit" ]; then
-        exit 0
-    elif [ -n "$selected" ]; then
-        # Split the selected string into components
-        program_name=$(echo "$selected" | cut -d' - ' -f1)
-        episode_title=$(echo "$selected" | cut -d' - ' -f2)
-        episode_id=$(echo "$selected" | cut -d' - ' -f3)
-
-        # Debugging statements
-        echo "Program Name: $program_name"
-        echo "Episode Title: $episode_title"
-        echo "Episode ID: $episode_id"
-
-        # Get the podcast URL
-        url=$(get_podcast_url "$episode_id")
-
-        # Debugging statement
-        echo "Podcast URL: $url"
-
-        # Notify the user and play the podcast
-        if [ -n "$url" ]; then
-            notify-send "Playing podcast" "$program_name - $episode_title" -t 5000
-            mpv "$url"
+# Function to control the stream
+control_stream() {
+    # Kill the mpv process
+    if [ -f "$MPV_PID_FILE" ]; then
+        mpid=$(cat "$MPV_PID_FILE")
+        if ps -p "$mpid" > /dev/null; then
+            kill "$mpid"
+            echo "Stopped mpv."
         else
-            notify-send "Error" "No URL found for $selected" -t 5000
+            echo "mpv is not running."
         fi
+        rm "$MPV_PID_FILE"
+    else
+        echo "No mpv process ID file found."
     fi
+}
+
+# Function to check if the sverigesradio-dmenu script is installed
+check_sr_radio_script() {
+    if command -v sverigesradio-dmenu > /dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Initial menu loop
+while true; do
+    # Show initial menu with dmenu
+    initial_option=$(echo -e "Search\nTurn off current pod\nSR Live radio\nExit" | dmenu -i -p "Listen to pod episodes (Sveriges Radio) choose what to do:")
+
+    case "$initial_option" in
+        "Search")
+            # Prompt for search query
+            search_query=$(echo "" | dmenu -i -p "Type your search here:")
+
+            # Check if user pressed ESC
+            if [ -z "$search_query" ]; then
+                continue
+            fi
+
+            # Get the search results
+            results=$(search_podcasts "$search_query")
+
+            # Check if there are results
+            if [ -z "$results" ]; then
+                dmenu -i -p "No results found for '$search_query'. Press ENTER to search again or ESC to go back."
+                continue
+            fi
+
+            # Add option for more results or new search
+            results_with_option=$(echo -e "$results\nMore results\nNew search\nExit")
+
+            while true; do
+                # Display results with dmenu
+                selected=$(display_results "$results_with_option")
+
+                # Check if user pressed ESC
+                if [ -z "$selected" ]; then
+                    break
+                fi
+
+                # Handle options
+                if [ "$selected" == "New search" ]; then
+                    break
+                elif [ "$selected" == "Exit" ]; then
+                    # Kill the mpv process if it's running before exiting
+                    control_stream
+                    exit 0
+                elif [ "$selected" == "More results" ]; then
+                    # Fetch more results (by increasing size)
+                    size=$(echo "$results" | grep -c " - ")
+                    size=$((size + 5))
+                    results=$(curl -s "https://api.sr.se/api/v2/episodes/search?query=${search_query}&format=json&size=${size}" | jq -r '.episodes[] | "\(.program.name) - \(.title) - \(.id)"')
+                    results_with_option=$(echo -e "$results\nMore results\nNew search\nExit")
+                    continue
+                else
+                    # Extract episode ID
+                    episode_id=$(echo "$selected" | awk -F' - ' '{print $3}')
+
+                    # Get the podcast URL
+                    url=$(get_podcast_url "$episode_id")
+
+                    # Check if the URL is valid
+                    if [ -z "$url" ] || [ "$url" == "null" ]; then
+                        dmenu -i -p "No valid URL found for episode ID $episode_id. Press ENTER to try another episode or ESC to go back."
+                        continue
+                    fi
+
+                    # Notify and play the podcast in background
+                    notify-send "Playing podcast" "$(echo "$selected" | awk -F' - ' '{print $2}')" -t 5000
+                    mpv --no-video "$url" > /dev/null 2>&1 &
+
+                    # Save the process ID to a file
+                    echo $! > "$MPV_PID_FILE"
+
+                    # Exit the script after starting playback
+                    exit 0
+                fi
+            done
+            ;;
+        "Turn off current pod")
+            # Kill the mpv process and return to the start menu
+            control_stream
+            ;;
+        "SR Live radio")
+            # Check if the sverigesradio-dmenu script is installed
+            if check_sr_radio_script; then
+                # Exit current script and run sverigesradio-dmenu
+                control_stream
+                sverigesradio-dmenu
+                exit 0
+            else
+                # Show error notification and exit
+                notify-send "Error" "sverigesradio-dmenu script not installed!" -t 5000
+                exit 1
+            fi
+            ;;
+        "Exit")
+            # Kill the mpv process if it's running before exiting
+            control_stream
+            exit 0
+            ;;
+    esac
 done
