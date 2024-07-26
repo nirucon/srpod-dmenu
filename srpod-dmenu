@@ -13,55 +13,56 @@
 # Function to search for podcasts
 search_podcasts() {
     local query=$1
-    curl -s "https://api.sr.se/api/v2/episodes/search?query=${query}&format=json&size=5" | jq -r '.episodes[] | "\(.program.name) - \(.title)"'
+    curl -s "https://api.sr.se/api/v2/episodes/search?query=${query}&format=json&size=5" | jq -r '.episodes[] | "\(.program.name) - \(.title) - \(.id)"'
 }
 
 # Function to get podcast URL
 get_podcast_url() {
-    local program_name=$1
-    local episode_title=$2
-    curl -s "https://api.sr.se/api/v2/episodes/search?query=${program_name}&format=json&size=5" | jq -r --arg title "$episode_title" '.episodes[] | select(.title == $title) | .listenurl'
+    local episode_id=$1
+    curl -s "https://api.sr.se/api/v2/episodes/get?id=${episode_id}&format=json" | jq -r '.episode.listenurl'
 }
 
 # Main loop
 while true; do
     # Prompt the user to enter a search term
     search_query=$(echo -e "New search\nExit" | dmenu -p "Enter search term:")
-    
+
     # Check if the user wants to exit
     if [ "$search_query" == "Exit" ]; then
         exit 0
     fi
-    
+
     # Get the search results
     results=$(search_podcasts "$search_query")
-    
+
     # Prompt the user to select a podcast episode
     selected=$(echo -e "$results\nNew search\nExit" | dmenu -p "Select an episode:")
-    
+
     # Handle user selection
     if [ "$selected" == "New search" ]; then
         continue
     elif [ "$selected" == "Exit" ]; then
         exit 0
     elif [ -n "$selected" ]; then
-        # Split the selected string into program name and episode title
+        # Split the selected string into components
         program_name=$(echo "$selected" | cut -d' - ' -f1)
-        episode_title=$(echo "$selected" | cut -d' - ' -f2-)
-        
+        episode_title=$(echo "$selected" | cut -d' - ' -f2)
+        episode_id=$(echo "$selected" | cut -d' - ' -f3)
+
         # Debugging statements
         echo "Program Name: $program_name"
         echo "Episode Title: $episode_title"
-        
+        echo "Episode ID: $episode_id"
+
         # Get the podcast URL
-        url=$(get_podcast_url "$program_name" "$episode_title")
-        
+        url=$(get_podcast_url "$episode_id")
+
         # Debugging statement
         echo "Podcast URL: $url"
-        
+
         # Notify the user and play the podcast
         if [ -n "$url" ]; then
-            notify-send "Playing podcast" "$selected" -t 5000
+            notify-send "Playing podcast" "$program_name - $episode_title" -t 5000
             mpv "$url"
         else
             notify-send "Error" "No URL found for $selected" -t 5000
