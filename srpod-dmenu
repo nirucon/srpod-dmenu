@@ -10,10 +10,25 @@
 # - mpv
 # - notify-send
 
+#!/bin/bash
+
+# Dependencies:
+# - jq
+# - curl
+# - dmenu
+# - mpv
+# - notify-send
+
 # Function to search for podcasts
 search_podcasts() {
     local query=$1
     curl -s "https://api.sr.se/api/v2/episodes/search?query=${query}&format=json&size=5" | jq -r '.episodes[] | "\(.program.name) - \(.title) - \(.id)"'
+}
+
+# Function to get podcast URL
+get_podcast_url() {
+    local episode_id=$1
+    curl -s "https://api.sr.se/api/v2/episodes/get?id=${episode_id}&format=json" | jq -r '.episode.listenpodfile.url'
 }
 
 # Main loop
@@ -51,7 +66,18 @@ while true; do
         echo "Episode Title: $episode_title"
         echo "Episode ID: $episode_id"
 
-        # For now, just loop back to the start
-        continue
+        # Get the podcast URL
+        url=$(get_podcast_url "$episode_id")
+
+        # Debugging statement
+        echo "Podcast URL: $url"
+
+        # Notify the user and play the podcast
+        if [ -n "$url" ]; then
+            notify-send "Playing podcast" "$program_name - $episode_title" -t 5000
+            mpv "$url"
+        else
+            notify-send "Error" "No URL found for $selected" -t 5000
+        fi
     fi
 done
