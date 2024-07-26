@@ -2,8 +2,6 @@
 
 `srpod-dmenu` is a script for searching and playing podcasts from Sveriges Radio using `dmenu` and `mpv`. It provides an intuitive interface for finding and listening to podcasts, with the added capability to control the playback and optionally switch to live radio streaming.
 
-Note: I have only tested it on Arch Linux so far.
-
 ## Features
 
 - Search for podcast episodes by keyword.
@@ -28,8 +26,6 @@ Optionally, you can also install `sverigesradio-dmenu` for live radio streaming 
 
 ## Installation
 
-Note: I use to save my dmenu scripts in /usr/local/bin/
-
 ### For Debian-based Systems
 
 1. **Ensure Dependencies are Installed**
@@ -40,9 +36,9 @@ Note: I use to save my dmenu scripts in /usr/local/bin/
    sudo apt-get install jq curl mpv dmenu libnotify-bin
    ```
 
-2. **Download the Script**
+2. **Download or Clone the Script**
 
-   Download the `srpod-dmenu` script:
+   You can either directly download the script or clone the repository. For direct download:
 
    ```bash
    wget https://example.com/path/to/srpod-dmenu -O srpod-dmenu
@@ -50,12 +46,27 @@ Note: I use to save my dmenu scripts in /usr/local/bin/
 
    Replace `https://example.com/path/to/srpod-dmenu` with the actual URL where the script is hosted.
 
-3. **Make the Script Executable**
+   To clone the repository:
+
+   ```bash
+   git clone https://example.com/path/to/repository.git
+   cd repository
+   ```
+
+3. **Place the Script**
+
+   Optionally, you can place the script in a directory included in your PATH. For instance, you might want to move it to `/usr/local/bin/`:
+
+   ```bash
+   sudo mv srpod-dmenu /usr/local/bin/
+   ```
+
+4. **Make the Script Executable**
 
    Change the permissions of the script to make it executable:
 
    ```bash
-   chmod +x srpod-dmenu
+   chmod +x /usr/local/bin/srpod-dmenu
    ```
 
 ### For Arch Linux
@@ -68,9 +79,9 @@ Note: I use to save my dmenu scripts in /usr/local/bin/
    sudo pacman -S jq curl mpv dmenu libnotify
    ```
 
-2. **Download the Script**
+2. **Download or Clone the Script**
 
-   Download the `srpod-dmenu` script:
+   You can either directly download the script or clone the repository. For direct download:
 
    ```bash
    wget https://example.com/path/to/srpod-dmenu -O srpod-dmenu
@@ -78,12 +89,27 @@ Note: I use to save my dmenu scripts in /usr/local/bin/
 
    Replace `https://example.com/path/to/srpod-dmenu` with the actual URL where the script is hosted.
 
-3. **Make the Script Executable**
+   To clone the repository:
+
+   ```bash
+   git clone https://example.com/path/to/repository.git
+   cd repository
+   ```
+
+3. **Place the Script**
+
+   Optionally, you can place the script in a directory included in your PATH. For instance, you might want to move it to `/usr/local/bin/`:
+
+   ```bash
+   sudo mv srpod-dmenu /usr/local/bin/
+   ```
+
+4. **Make the Script Executable**
 
    Change the permissions of the script to make it executable:
 
    ```bash
-   chmod +x srpod-dmenu
+   chmod +x /usr/local/bin/srpod-dmenu
    ```
 
 ## Usage
@@ -93,8 +119,10 @@ Note: I use to save my dmenu scripts in /usr/local/bin/
    To start the script, simply run:
 
    ```bash
-   ./srpod-dmenu
+   srpod-dmenu
    ```
+
+   If placed in `/usr/local/bin/`, you can call it directly by its name.
 
 2. **Navigating the Menu**
 
@@ -110,6 +138,10 @@ Note: I use to save my dmenu scripts in /usr/local/bin/
 ## Optional Live Radio Streaming
 
 To enable the live radio streaming feature, you need to have the `sverigesradio-dmenu` script installed. This script is available at [https://github.com/nirucon/sverigesradio-dmenu](https://github.com/nirucon/sverigesradio-dmenu). If installed, the "SR Live radio" option in the menu will allow you to switch to live radio streaming.
+
+## Testing
+
+This script has been tested on Arch Linux with `dwm` and `dmenu`. Other configurations may work but are not guaranteed.
 
 ## Troubleshooting
 
