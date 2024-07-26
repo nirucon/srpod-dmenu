@@ -18,8 +18,9 @@ search_podcasts() {
 
 # Function to get podcast URL
 get_podcast_url() {
-    local query=$1
-    curl -s "https://api.sr.se/api/v2/episodes/search?query=${query}&format=json&size=5" | jq -r '.episodes[] | select(.title == "'"${query#* - }"'") | .listenurl'
+    local program_name=$1
+    local episode_title=$2
+    curl -s "https://api.sr.se/api/v2/episodes/search?query=${program_name}&format=json&size=5" | jq -r --arg title "$episode_title" '.episodes[] | select(.title == $title) | .listenurl'
 }
 
 # Main loop
@@ -44,11 +45,26 @@ while true; do
     elif [ "$selected" == "Exit" ]; then
         exit 0
     elif [ -n "$selected" ]; then
+        # Split the selected string into program name and episode title
+        program_name=$(echo "$selected" | cut -d' - ' -f1)
+        episode_title=$(echo "$selected" | cut -d' - ' -f2-)
+        
+        # Debugging statements
+        echo "Program Name: $program_name"
+        echo "Episode Title: $episode_title"
+        
         # Get the podcast URL
-        url=$(get_podcast_url "$selected")
+        url=$(get_podcast_url "$program_name" "$episode_title")
+        
+        # Debugging statement
+        echo "Podcast URL: $url"
         
         # Notify the user and play the podcast
-        notify-send "Playing podcast" "$selected" -t 5000
-        mpv "$url"
+        if [ -n "$url" ]; then
+            notify-send "Playing podcast" "$selected" -t 5000
+            mpv "$url"
+        else
+            notify-send "Error" "No URL found for $selected" -t 5000
+        fi
     fi
 done
