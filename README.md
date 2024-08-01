@@ -1,5 +1,7 @@
 # srpod-dmenu
 
+Update: I have merged this and another script into one script [srplay-dmenu](https://github.com/nirucon/srplay-dmenu)
+
 `srpod-dmenu` is a script for searching and playing podcasts from Sveriges Radio using `dmenu` and `mpv`. It provides an intuitive interface for finding and listening to podcasts, with the added capability to control the playback and optionally switch to live radio streaming.
 
 ## Features
@@ -151,4 +153,4 @@ This script has been tested on Arch Linux with `dwm` and `dmenu`. Other configur
 
 ## License
 
-Do what you want!
+Feel free to use and modify, donate if you want :) https://www.paypal.com/paypalme/nicklasrudolfsson
