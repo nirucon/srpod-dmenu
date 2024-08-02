@@ -9,10 +9,16 @@
 # - dmenu
 # - mpv
 # - notify-send
-# https://github.com/nirucon/sverigesradio-dmenu (optional for jumping to live radio streaming)
+# https://github.com/nirucon/sverigesradio-dmenu and (optional for jumping to live radio streaming)
 
 # Temporary file to store mpv process ID
 MPV_PID_FILE="/tmp/srpod-mpv.pid"
+
+# Function to show a notification
+show_notification() {
+    local message="$1"
+    notify-send "Notification" "$message" -t 3000
+}
 
 # Function to search for podcasts
 search_podcasts() {
